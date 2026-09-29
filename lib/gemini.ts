@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { assertNoPII, type PII } from "./pii";
 
 let client: GoogleGenAI | null = null;
@@ -29,6 +29,7 @@ export async function geminiJSON<T>(opts: {
         contents: opts.prompt,
         config: {
           temperature: opts.temperature ?? 0.2,
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: "application/json",
           responseJsonSchema: opts.schema,
         },

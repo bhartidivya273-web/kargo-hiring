@@ -53,6 +53,7 @@ ${rubricText}
 
 Instructions:
 - Each score is an integer 0-3 using the scale above. Apply the SPM criteria's higher bar strictly and separately.
+- Use the 0-3 scale literally. 0 means nothing relevant on the CV. One specific example that meets the role's bar scores 2, even where the SPM text asks for more than one example to reach 3. Do not score 0 just because a second example is missing.
 - Score only what the CV actually states. Do not infer, do not reward titles, self-descriptions, certifications or colleges.
 - "reason" is ONE line (max 30 words): cite the specific CV evidence that earned the score, or say what is missing.
 - The candidate's identity has been removed ([CANDIDATE], [EMAIL], [PHONE], [LINK]). Ignore those tokens.
