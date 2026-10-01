@@ -119,7 +119,7 @@ insert into rubric_criteria (role, position, name, description, weight) values (
   on conflict (role, position) do update set name = excluded.name, description = excluded.description, weight = excluded.weight;
 insert into rubric_criteria (role, position, name, description, weight) values ('SPM', 2, $q$Written failure trail$q$, $q$Everything in the PM version, plus a version written for people outside their team (customers or leadership) and follow-up actions they personally tracked to completion.
   Strong: "Owned the follow-up action items to closure" (Lavanya).
-  Weak: a post-mortem written by someone else. A team retrospective with no named author.$q$, 20)
+  Weak: a post-mortem written by someone else. A team retrospective with no named author.$q$, 25)
   on conflict (role, position) do update set name = excluded.name, description = excluded.description, weight = excluded.weight;
 insert into rubric_criteria (role, position, name, description, weight) values ('SPM', 3, $q$Acted before it was reported$q$, $q$At least two separate examples, at least one affecting customers or another company. Each states when the problem was caught relative to when it would have surfaced.
   Strong: two or more early catches across different clients or systems.

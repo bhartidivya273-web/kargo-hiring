@@ -65,7 +65,7 @@ What a strong candidate looks like:
 Everything in the PM version, plus a version written for people outside their team (customers or leadership) and follow-up actions they personally tracked to completion.
   Strong: "Owned the follow-up action items to closure" (Lavanya).
   Weak: a post-mortem written by someone else. A team retrospective with no named author.
-Weight: 20%
+Weight: 25%
 
 Criterion name: Acted before it was reported
 What a strong candidate looks like:
