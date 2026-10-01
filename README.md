@@ -28,3 +28,10 @@ When a new CV moves the line, affected unsent drafts are regenerated automatical
 
 ### Changing the rubric
 Edit `rubric.txt`, run `npm run seed:sql`, then run the regenerated `supabase/seed_rubric.sql`. Re-score candidates afterwards.
+
+## Operating notes
+
+- **Test mode:** while `EMAIL_TEST_OVERRIDE` is set, every email goes to that address instead of the candidate's. Resend without a verified domain can only deliver to the account owner anyway. To email real candidates: verify a domain in Resend, set `RESEND_FROM` to an address on it, and delete `EMAIL_TEST_OVERRIDE`.
+- **Gemini key:** if uploads fail with `Gemini call failed ... 401`, the key has expired or been revoked. Create a new one at aistudio.google.com/apikey, update `GEMINI_API_KEY` in Vercel (and `.env.local`), and redeploy. Enable billing on the key's project so inputs are not used for training.
+- **Rubric weights:** the SPM weights in `rubric.txt` total 100. If the database predates that fix, run `update rubric_criteria set weight = 25 where role = 'SPM' and name = 'Written failure trail';` or re-run `supabase/seed_rubric.sql`.
+- **Verified end to end (live):** 15 synthetic CVs uploaded, scored on both rubrics, top 5 per role given a 3-sentence brief and invite draft, the rest a rejection draft, no personal details in stored CV text, one email delivered via Resend with the real first name, a second send refused.
