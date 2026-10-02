@@ -10,7 +10,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <b>Kargo Hiring</b>
           <a href="/">Dashboard</a>
           <a href="/upload">Upload CVs</a>
-          <a href="/rubric">Rubric</a>
           <form action="/api/logout" method="post">
             <button className="small">Sign out</button>
           </form>
