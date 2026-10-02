@@ -7,7 +7,9 @@ const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const PHONE_RE = /(?:\+\d{1,3}[\s-]?)?(?:\(?\d{2,5}\)?[\s.-]?){2,4}\d{2,5}/g;
 const URL_RE = /\b(?:https?:\/\/|www\.)\S+|\b(?:linkedin\.com|github\.com)\/\S+/gi;
 const HEADER_WORDS =
-  /\b(resume|résumé|curriculum|vitae|cv|profile|summary|contact|email|phone|mobile|address|objective|experience|product|manager|senior|linkedin)\b/i;
+  /\b(resume|résumé|curriculum|vitae|cv|profile|summary|synopsis|professional|contact|email|phone|mobile|address|objective|experience|skills?|core|competencies|qualifications?|academic|education|college|university|institute|school|junior|product|manager|senior|linkedin|venture|builder|delhi|ncr|mumbai|bengaluru|bangalore|pune|hyderabad|chennai|kolkata|ghaziabad|noida|gurgaon|gurugram|india|leader|delivery|engineer|consultant|analyst|director|head|lead|about|career|details|personal|work|history|projects?|achievements?|certifications?|technology|technologies|solutions)\b/i;
+
+const FILE_STOP = new Set(["pm", "spm", "cv", "resume", "resumes", "curriculum", "vitae", "final", "new", "copy", "updated", "latest", "product", "manager", "senior", "doc", "docx", "pdf", "application", "applicant", "candidate"]);
 
 function isPhone(s: string) {
   const digits = s.replace(/\D/g, "");
@@ -18,11 +20,26 @@ function isPhone(s: string) {
   return true;
 }
 
-function findName(text: string, email: string | null): string | null {
-  const labelled = text.match(/^\s*(?:full\s+)?name\s*[:\-]\s*(.+)$/im);
-  if (labelled) return tidyName(labelled[1]);
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 6);
-  for (const line of lines) {
+// "03_arnav_sen.pdf" -> "Arnav Sen". Returns null when the file name is not a plain name.
+export function nameFromFileName(fileName: string | null | undefined): string | null {
+  if (!fileName) return null;
+  const tokens = fileName
+    .replace(/\.[^.]+$/, "")
+    .split(/[\s_.()\-]+/)
+    .filter((t) => /^[A-Za-z]{2,}$/.test(t) && !FILE_STOP.has(t.toLowerCase()));
+  if (tokens.length < 2 || tokens.length > 4) return null;
+  return tokens.map((t) => t[0].toUpperCase() + t.slice(1).toLowerCase()).join(" ");
+}
+
+const tokenSet = (s: string) => new Set(s.toLowerCase().split(/[^a-z]+/).filter((t) => t.length >= 2));
+const overlaps = (a: string, b: string) => {
+  const B = tokenSet(b);
+  return [...tokenSet(a)].some((t) => B.has(t));
+};
+
+function headerNames(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 8)) {
     const cleaned = line.split(/[|•·,]/)[0].trim();
     const words = cleaned.split(/\s+/);
     if (
@@ -32,12 +49,25 @@ function findName(text: string, email: string | null): string | null {
       !HEADER_WORDS.test(cleaned) &&
       words.every((w) => /^[A-Z][A-Za-z.'-]*$/.test(w))
     ) {
-      return tidyName(cleaned);
+      out.push(tidyName(cleaned));
     }
   }
+  return out;
+}
+
+function findName(text: string, email: string | null, fileName?: string | null): string | null {
+  const labelled = text.match(/^\s*(?:full\s+)?name\s*[:\-]\s*(.+)$/im);
+  if (labelled) return tidyName(labelled[1]);
+  const fromFile = nameFromFileName(fileName);
+  const headers = headerNames(text);
+  if (fromFile) {
+    // Prefer the CV's own spelling (e.g. with a middle initial) when it agrees with the file name.
+    return headers.find((h) => overlaps(h, fromFile)) ?? fromFile;
+  }
+  if (headers.length) return headers[0];
   if (email) {
     const parts = email.split("@")[0].split(/[._-]+/).filter((p) => /^[a-z]{2,}$/i.test(p));
-    if (parts.length >= 2) return tidyName(parts.slice(0, 2).join(" "));
+    if (parts.length >= 2) return parts.slice(0, 2).map((t) => t[0].toUpperCase() + t.slice(1).toLowerCase()).join(" ");
   }
   return null;
 }
@@ -56,10 +86,17 @@ function nameTokens(name: string | null) {
   return name ? name.split(/\s+/).filter((t) => t.replace(/\W/g, "").length >= 3) : [];
 }
 
-export function separatePII(raw: string): { pii: PII; content: string } {
-  const email = raw.match(EMAIL_RE)?.[0] ?? null;
+// PDF extraction can glue a preceding word onto an address ("REDDYsquad_5@x.co"): drop a leading ALL-CAPS run.
+function cleanEmail(e: string | undefined): string | null {
+  if (!e) return null;
+  const m = e.match(/^[A-Z]{2,}([a-z][a-z0-9._%+-]{2,}@.+)$/);
+  return m ? m[1] : e;
+}
+
+export function separatePII(raw: string, fileName?: string | null): { pii: PII; content: string } {
+  const email = cleanEmail(raw.match(EMAIL_RE)?.[0]);
   const phone = (raw.match(PHONE_RE) ?? []).find(isPhone)?.trim() ?? null;
-  const name = findName(raw, email);
+  const name = findName(raw, email, fileName);
 
   let content = raw
     .replace(EMAIL_RE, "[EMAIL]")
@@ -87,10 +124,10 @@ export function assertNoPII(text: string, pii: PII) {
   }
 }
 
-export function firstName(pii: { name: string | null } | null) {
-  return pii?.name?.split(/\s+/)[0] || "there";
+export function displayName(pii: { name: string | null } | null) {
+  return pii?.name?.trim() || "there";
 }
 
 export function fillName(text: string, pii: { name: string | null } | null) {
-  return text.replace(/\[(NAME|CANDIDATE)\]/g, firstName(pii));
+  return text.replace(/\[(NAME|CANDIDATE)\]/g, displayName(pii));
 }

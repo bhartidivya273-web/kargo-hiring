@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const { pii, content } = separatePII(raw);
+  const { pii, content } = separatePII(raw, file.name);
   try {
     assertNoPII(content, pii);
   } catch (e) {
