@@ -109,6 +109,16 @@ export function separatePII(raw: string, fileName?: string | null): { pii: PII; 
   return { pii: { name, email, phone }, content };
 }
 
+// Re-redacts text using the stored personal details. Idempotent; used to repair CV text that
+// was stored while a candidate's name was still mis-detected.
+export function redactKnown(text: string, pii: PII): string {
+  let out = text;
+  if (pii.email) out = out.replace(new RegExp(esc(pii.email), "gi"), "[EMAIL]");
+  if (pii.name) out = out.replace(new RegExp(esc(pii.name), "gi"), "[CANDIDATE]");
+  for (const t of nameTokens(pii.name)) out = out.replace(new RegExp(`\\b${esc(t)}\\b`, "gi"), "[CANDIDATE]");
+  return out;
+}
+
 // Hard stop: throws if any stored personal detail is present in text bound for the AI.
 export function assertNoPII(text: string, pii: PII) {
   const lower = text.toLowerCase();

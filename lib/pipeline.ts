@@ -1,6 +1,6 @@
 import { db, ROLES, TOP_N, scoreCol, type Role, type Tier } from "./db";
 import { geminiJSON } from "./gemini";
-import type { PII } from "./pii";
+import { redactKnown, type PII } from "./pii";
 
 export type Criterion = { id: number; role: Role; position: number; name: string; description: string; weight: number };
 export type RoleRow = { code: Role; title: string; bar_note: string };
@@ -35,6 +35,15 @@ export async function scoreCandidate(candidateId: string) {
   if (error) throw new Error(error.message);
   const rubric = await loadRubric();
   const pii = await loadPII(candidateId);
+
+  // Make sure the stored CV text carries none of the stored personal details (repairs rows
+  // saved while the name was mis-detected), and persist the cleaned text.
+  const cvText = redactKnown(cand.cv_text, pii);
+  if (cvText !== cand.cv_text) {
+    const fix = await s.from("candidates").update({ cv_text: cvText }).eq("id", candidateId);
+    if (fix.error) throw new Error(fix.error.message);
+    cand.cv_text = cvText;
+  }
 
   const rubricText = ROLES.map((role) => {
     const r = rubric.roles.find((x) => x.code === role)!;
